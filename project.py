@@ -13,6 +13,16 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import precision_score
 
 
+def set_seed(seed=1234):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # if using CUDA
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+set_seed(1234)
+
 # Constants:
 DONT_INCLUDE = ['R_fighter', 'B_fighter']
 CSV_saved = 'ufc-master.csv'
@@ -339,111 +349,115 @@ with torch.no_grad():
     ###################################################
 
     # chatgpt code: monitoring validation loss (trying to understand if we're potentially overfitting)
-import torch
-import numpy as np
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, TensorDataset
+# import torch
+# import numpy as np
+# from sklearn.model_selection import train_test_split
+# from torch.utils.data import DataLoader, TensorDataset
 
-# Assuming you have X_train, X_test, y_train, y_test tensors ready
-# Create datasets for train and validation
-train_data = TensorDataset(X_train, y_train)
-val_data = TensorDataset(X_test, y_test)
+# # Assuming you have X_train, X_test, y_train, y_test tensors ready
+# # Create datasets for train and validation
+# train_data = TensorDataset(X_train, y_train)
+# val_data = TensorDataset(X_test, y_test)
 
-# Create DataLoaders
-batch_size = 32
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(dataset=val_data, batch_size=batch_size, shuffle=False)
+# # Create DataLoaders
+# batch_size = 32
+# train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
+# val_loader = DataLoader(dataset=val_data, batch_size=batch_size, shuffle=False)
 
-# # Initialize your model, loss criterion, and optimizer
-# model = LogisticRegression(X_train.shape[1])
-# criterion = torch.nn.BCELoss()
-# optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+# # # Initialize your model, loss criterion, and optimizer
+# # model = LogisticRegression(X_train.shape[1])
+# # criterion = torch.nn.BCELoss()
+# # optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
 
-def train_model(num_epochs, model, train_loader, val_loader, criterion, optimizer):
-    for epoch in range(num_epochs):
-        model.train()
-        for X_batch, y_batch in train_loader:
-            optimizer.zero_grad()
-            outputs = model(X_batch)
-            loss = criterion(outputs, y_batch)
-            loss.backward()
-            optimizer.step()
+# def train_model(num_epochs, model, train_loader, val_loader, criterion, optimizer):
+#     for epoch in range(num_epochs):
+#         model.train()
+#         for X_batch, y_batch in train_loader:
+#             optimizer.zero_grad()
+#             outputs = model(X_batch)
+#             loss = criterion(outputs, y_batch)
+#             loss.backward()
+#             optimizer.step()
 
-        model.eval()
-        with torch.no_grad():
-            val_loss = 0
-            for X_val, y_val in val_loader:
-                val_outputs = model(X_val)
-                val_loss += criterion(val_outputs, y_val).item()
+#         model.eval()
+#         with torch.no_grad():
+#             val_loss = 0
+#             for X_val, y_val in val_loader:
+#                 val_outputs = model(X_val)
+#                 val_loss += criterion(val_outputs, y_val).item()
 
-        val_loss /= len(val_loader)
-        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item():.4f}, Val Loss: {val_loss:.4f}')
+#         val_loss /= len(val_loader)
+#         print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item():.4f}, Val Loss: {val_loss:.4f}')
 
-train_model(100, model, train_loader, val_loader, criterion, optimizer)
+# train_model(100, model, train_loader, val_loader, criterion, optimizer)
 
-##################### NEURAL NET FROM CHATGPT #########################
+##################### NEURAL NETS FROM CHATGPT #########################
 
-# class SimpleNN(nn.Module):
-#     def __init__(self, input_dim):
-#         super(SimpleNN, self).__init__()
-#         # Define the first hidden layer
-#         self.hidden1 = nn.Linear(input_dim, 128)  # 128 nodes in the first hidden layer
-#         # Define the second hidden layer
-#         self.hidden2 = nn.Linear(128, 64)  # 64 nodes in the second hidden layer
-#         # Output layer
-#         self.output = nn.Linear(64, 1)
+class SimpleNN(nn.Module): 
+    def __init__(self, input_dim):
+        super(SimpleNN, self).__init__()
+        # Define the first hidden layer
+        self.hidden1 = nn.Linear(input_dim, 128)  # 128 nodes in the first hidden layer
+        # Define the second hidden layer
+        self.hidden2 = nn.Linear(128, 64)  # 64 nodes in the second hidden layer
+        # Output layer
+        self.output = nn.Linear(64, 1)
 
-#     def forward(self, x):
-#         # Forward pass through the first hidden layer
-#         x = F.relu(self.hidden1(x))
-#         # Forward pass through the second hidden iyer
-#         x = F.relu(self.hidden2(x))
-#         # Output layer with sigmoid activation
-#         x = torch.sigmoid(self.output(x))
-#         return x
+    def forward(self, x):
+        # Forward pass through the first hidden layer
+        x = F.relu(self.hidden1(x))
+        # Forward pass through the second hidden iyer
+        x = F.relu(self.hidden2(x))
+        # Output layer with sigmoid activation
+        x = torch.sigmoid(self.output(x))
+        return x
     
-# class ImprovedNN(nn.Module):
-#     def __init__(self, input_dim):
-#         super(ImprovedNN, self).__init__()
-#         self.hidden1 = nn.Linear(input_dim, 128)
-#         self.dropout1 = nn.Dropout(0.5)  # Dropout layer
-#         self.hidden2 = nn.Linear(128, 64)
-#         self.dropout2 = nn.Dropout(0.5)  # Another Dropout layer
-#         self.output = nn.Linear(64, 1)
+class ImprovedNN(nn.Module): 
+    def __init__(self, input_dim):
+        super(ImprovedNN, self).__init__()
+        self.hidden1 = nn.Linear(input_dim, 128)
+        self.dropout1 = nn.Dropout(0.5)  # Dropout layer
+        self.hidden2 = nn.Linear(128, 64)
+        self.dropout2 = nn.Dropout(0.5)  # Another Dropout layer
+        self.output = nn.Linear(64, 1)
 
-#     def forward(self, x):
-#         x = F.relu(self.hidden1(x))
-#         x = self.dropout1(x)  # Apply dropout after activation
-#         x = F.relu(self.hidden2(x))
-#         x = self.dropout2(x)  # Apply dropout after activation
-#         x = torch.sigmoid(self.output(x))
-#         return x
+    def forward(self, x):
+        x = F.relu(self.hidden1(x))
+        x = self.dropout1(x)  # Apply dropout after activation
+        x = F.relu(self.hidden2(x))
+        x = self.dropout2(x)  # Apply dropout after activation
+        x = torch.sigmoid(self.output(x))
+        return x
+
+
+# Setup optimizer and scheduler
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     
-# # model = SimpleNN(input_dim=X_train.shape[1])
-# model = ImprovedNN(input_dim=X_train.shape[1])
+# model = SimpleNN(input_dim=X_train.shape[1]) # Accuracy: 0.6549 accuracy
+model = ImprovedNN(input_dim=X_train.shape[1]) # Accuracy: 0.6535
 
-# criterion = nn.BCELoss()  # Binary Cross-Entropy Loss for binary classification
-# optimizer = torch.optim.Adam(model.parameters(), lr=0.001)  # Using the Adam optimizer
+criterion = nn.BCELoss()  # Binary Cross-Entropy Loss for binary classification
 
-# # Number of epochs
-# epochs = 100
-# for epoch in range(epochs):
-#     model.train()
-#     optimizer.zero_grad()  # Clear the gradients
-#     # Forward pass
-#     outputs = model(X_train)
-#     loss = criterion(outputs, y_train)
-#     # Backward pass
-#     loss.backward()
-#     optimizer.step()  # Update the weights
+# Number of epochs
+epochs = 100
+for epoch in range(epochs):
+    model.train()
+    optimizer.zero_grad()  # Clear the gradients
+    # Forward pass
+    outputs = model(X_train)
+    loss = criterion(outputs, y_train)
+    # Backward pass
+    loss.backward()
+    optimizer.step()  # Update the weights
 
-#     # Print loss every 10 epochs
-#     if epoch % 10 == 0:
-#         print(f'Epoch {epoch+1}/{epochs}, Loss: {loss.item():.4f}')
+    # Print loss every 10 epochs
+    if epoch % 10 == 0:
+        print(f'Epoch {epoch+1}/{epochs}, Loss: {loss.item():.4f}')
 
-# model.eval()
-# with torch.no_grad():
-#     predictions = model(X_test)
-#     predictions = predictions.round()  # Threshold the outputs to get binary results
-#     accuracy = (predictions.eq(y_test).sum() / float(y_test.shape[0])).item()
-#     print(f'Accuracy: {accuracy:.4f}')
+model.eval()
+with torch.no_grad():
+    predictions = model(X_test)
+    predictions = predictions.round()  # Threshold the outputs to get binary results
+    accuracy = (predictions.eq(y_test).sum() / float(y_test.shape[0])).item()
+    print(f'Accuracy: {accuracy:.4f}')
